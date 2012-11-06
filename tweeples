@@ -34,8 +34,8 @@ if __name__ == '__main__':
     # See also http://dev.twitter.com/pages/oauth_single_token
 
     APP_NAME = 'Tweeple Graph'
-    CONSUMER_KEY = 'fzvjYNEPPEkxmcfqKusQ'
-    CONSUMER_SECRET = 'UkncBZ0OtBA06mI40AEVMp9FMJcZiJ0geNmW5tZdcI'
+    CONSUMER_KEY = ''
+    CONSUMER_SECRET = ''
 
     t = oauth_login(APP_NAME, CONSUMER_KEY, CONSUMER_SECRET)
     print '% Authenticated to Twitter'
