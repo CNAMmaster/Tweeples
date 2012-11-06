@@ -2,6 +2,7 @@
 #
 # Tweeples - Mine Twitter for people relationships
 
+import json
 import os
 import sys
 import twitter
@@ -36,4 +37,11 @@ if __name__ == '__main__':
     CONSUMER_KEY = 'fzvjYNEPPEkxmcfqKusQ'
     CONSUMER_SECRET = 'UkncBZ0OtBA06mI40AEVMp9FMJcZiJ0geNmW5tZdcI'
 
-    oauth_login(APP_NAME, CONSUMER_KEY, CONSUMER_SECRET)
+    t = oauth_login(APP_NAME, CONSUMER_KEY, CONSUMER_SECRET)
+    print '% Authenticated to Twitter'
+
+    # The Yahoo! 'Where on Earth' id of the entire world.
+    WORLD_WOE_ID = 1
+    world_trends = t.trends._(WORLD_WOE_ID)
+    trending = [ trend['name'] for trend in world_trends()[0]['trends']]
+    print json.dumps(trending, indent=1)
