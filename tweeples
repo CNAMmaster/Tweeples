@@ -39,9 +39,6 @@ if __name__ == '__main__':
     CONSUMER_SECRET = ''
 
     t = twitter.Twitter(domain="search.twitter.com")
-    #t = oauth_login(APP_NAME, CONSUMER_KEY, CONSUMER_SECRET,
-    #                domain='search.twitter.com')
-    #print '% Authenticated to Twitter'
 
     # Search for 'freebsd' and print a list of tweets matching.
     search_results = []
@@ -57,4 +54,3 @@ if __name__ == '__main__':
     for result in search_results:
         print '%30s %s' % (result['id_str'], result['text'])
     print '%d matches for \'freebsd\'' % len(search_results)
-    #print json.dumps(search_results, indent=1)
