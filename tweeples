@@ -40,8 +40,13 @@ if __name__ == '__main__':
     t = oauth_login(APP_NAME, CONSUMER_KEY, CONSUMER_SECRET)
     print '% Authenticated to Twitter'
 
-    # The Yahoo! 'Where on Earth' id of the entire world.
-    WORLD_WOE_ID = 1
-    world_trends = t.trends._(WORLD_WOE_ID)
-    trending = [ trend['name'] for trend in world_trends()[0]['trends']]
-    print json.dumps(trending, indent=1)
+    # Search for 'freebsd' and print a list of tweets matching.
+    search_results = []
+    MAX_PAGES = 1
+    RESULTS_PER_PAGE = 100
+    for page in range(1, MAX_PAGES + 1):
+        search_results += (
+          t.search(q='freebsd', rpp=RESULTS_PER_PAGE,
+                   page=page)['results'])
+
+    print json.dumps(search_results, indent=1)
