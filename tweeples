@@ -13,7 +13,8 @@ from twitter.oauth_dance import oauth_dance
 def oauth_login(app_name='',
                 consumer_key='',
                 consumer_secret='',
-                token_file='twitter.oauth'):
+                token_file='twitter.oauth',
+                domain='api.twitter.com'):
     try:
         (access_token, access_token_secret) = read_token_file(token_file)
     except IOError, e:
@@ -24,7 +25,7 @@ def oauth_login(app_name='',
             os.mkdir('out')
         write_token_file(token_file, access_token, access_token_secret)
         print >> sys.stderr, "OAuth Success. Token file stored to", token_file
-    return twitter.Twitter(domain='api.twitter.com', api_version='1',
+    return twitter.Twitter(domain=domain, api_version='1',
                         auth=twitter.oauth.OAuth(access_token, access_token_secret,
                         consumer_key, consumer_secret))
 
@@ -37,7 +38,8 @@ if __name__ == '__main__':
     CONSUMER_KEY = ''
     CONSUMER_SECRET = ''
 
-    t = oauth_login(APP_NAME, CONSUMER_KEY, CONSUMER_SECRET)
+    t = oauth_login(APP_NAME, CONSUMER_KEY, CONSUMER_SECRET,
+                    domain='search.twitter.com')
     print '% Authenticated to Twitter'
 
     # Search for 'freebsd' and print a list of tweets matching.
