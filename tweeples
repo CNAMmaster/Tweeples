@@ -33,8 +33,6 @@ def oauth_login(app_name='',
 def search(text, max_pages=10, results_per_page=100):
     while True:
         t = twitter.Twitter(domain="search.twitter.com")
-
-        # Search for 'text' and return a list of tweets matching.
         search_results = []
         for page in range(1, max_pages + 1):
             search_results += (
