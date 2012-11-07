@@ -33,11 +33,8 @@ def oauth_login(app_name='',
 def search(text, max_pages=10, results_per_page=100):
     while True:
         t = twitter.Twitter(domain="search.twitter.com")
-        search_results = []
         for page in range(1, max_pages + 1):
-            search_results += (
-                t.search(q=text, rpp=results_per_page, page=page)['results'])
-        yield search_results
+            yield t.search(q=text, rpp=results_per_page, page=page)['results']
 
 if __name__ == '__main__':
 
@@ -45,12 +42,12 @@ if __name__ == '__main__':
     # See also http://dev.twitter.com/pages/oauth_single_token
 
     APP_NAME = 'Tweeple Graph'
-    CONSUMER_KEY = ''				# secret: contact gkeramidas
-    CONSUMER_SECRET = ''			# secret: contact 
+    CONSUMER_KEY = ''			# secret: contact gkeramidas
+    CONSUMER_SECRET = ''		# secret: contact gkeramidas
 
     results = {}
     lookup_text = '#7ngr'
-    for matches in search(lookup_text, max_pages=2, results_per_page=10):
+    for matches in search(lookup_text):
         newmatches = 0
         for tweet in matches:
             (tid, tuser, text) = (tweet['id'], tweet['from_user'],
@@ -61,3 +58,4 @@ if __name__ == '__main__':
                 newmatches += 1
         if newmatches > 0:
             print ''
+            sys.stdout.flush()
