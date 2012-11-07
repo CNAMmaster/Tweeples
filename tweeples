@@ -127,7 +127,10 @@ if __name__ == '__main__':
     CONSUMER_KEY = ''			# secret: contact gkeramidas
     CONSUMER_SECRET = ''		# secret: contact gkeramidas
 
-    lookup_text = '#7ngr'               # search text to match
+    lookup_text = '#7ngr'               # default search text to match
+    if len(sys.argv) > 1:
+        lookup_text = ' '.join(sys.argv[1:])
+        message('Lookup text: %s', lookup_text)
     json_filename = 'tweets.json'       # log file for archiving tweets
     try:
         while True:
