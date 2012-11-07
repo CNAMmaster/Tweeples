@@ -48,8 +48,17 @@ if __name__ == '__main__':
     CONSUMER_KEY = ''				# secret: contact gkeramidas
     CONSUMER_SECRET = ''			# secret: contact 
 
-    lookup_text = 'freebsd'
+    results = {}
+    lookup_text = '#7ngr'
     for matches in search(lookup_text, max_pages=2, results_per_page=10):
-        print json.dumps(matches, indent=1)
-        print >> sys.stderr, '%d matches for "%s"\n' % (len(matches),
-                                                        lookup_text)
+        newmatches = 0
+        for tweet in matches:
+            (tid, tuser, text) = (tweet['id'], tweet['from_user'],
+                                  tweet['text'])
+            if not tid in results:
+                print '%30s @%-15s %s' % (
+                    tid, tuser, text.replace('\n', ' '))
+                results[tid] = tweet
+                newmatches += 1
+        if newmatches > 0:
+            print ''
