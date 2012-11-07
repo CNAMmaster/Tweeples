@@ -117,9 +117,6 @@ def streamsearch(ofile, text, max_pages=10, results_per_page=100):
     except IOError, e:
         message('Error writing at file "%s". %s', ofile, e)
         return None
-    except Exception, e:
-        message('Interrupted', e)
-        return None
 
 if __name__ == '__main__':
 
@@ -132,4 +129,11 @@ if __name__ == '__main__':
 
     lookup_text = '#7ngr'               # search text to match
     json_filename = 'tweets.json'       # log file for archiving tweets
-    streamsearch(json_filename, lookup_text)
+    try:
+        while True:
+            streamsearch(json_filename, lookup_text)
+    except Exception, e:
+        # TODO(gkeramidas): Find a better way to handle exceptions
+        # related to Twitter requests vs. all the rest.
+        message('Skipping exception %s [...]', str(e).split('\n')[0])
+        pass
