@@ -4,6 +4,7 @@
 
 import datetime
 import errno
+import getopt
 import json
 import os
 import sys
@@ -127,11 +128,25 @@ if __name__ == '__main__':
     CONSUMER_KEY = ''			# secret: contact gkeramidas
     CONSUMER_SECRET = ''		# secret: contact gkeramidas
 
-    lookup_text = '#7ngr'               # default search text to match
-    if len(sys.argv) > 1:
-        lookup_text = ' '.join(sys.argv[1:])
+    json_filename = 'tweets.json'       # default output file name
+    lookup_text = '#7ngr'               # default search string
+
+    # Parse command-line args for output file name.
+    try:
+        optlist, args = getopt.getopt(sys.argv[1:], 'o:')
+    except getopt.GetoptError, e:
+        message('%s', e)
+        sys.exit(1)
+
+    for opt, value in optlist:
+        if opt == '-o' and value:
+            json_filename = value       # custom output file
+            message('Output file: %s', json_filename)
+    if len(args) > 0:
+        # custom lookup text
+        lookup_text = ' '.join(args)
         message('Lookup text: %s', lookup_text)
-    json_filename = 'tweets.json'       # log file for archiving tweets
+
     try:
         while True:
             streamsearch(json_filename, lookup_text)
