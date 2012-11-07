@@ -3,6 +3,7 @@
 # Tweeples - Mine Twitter for people relationships
 
 import datetime
+import errno
 import json
 import os
 import sys
@@ -10,6 +11,12 @@ import twitter
 
 from twitter.oauth import write_token_file, read_token_file
 from twitter.oauth_dance import oauth_dance
+
+def message(msgformat, *args):
+    """Print a message string to sys.stderr"""
+    timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    msg = msgformat % (args)
+    print >> sys.stderr, '%s -- %s' % (timestamp, msg)
 
 def oauth_login(app_name='', consumer_key='', consumer_secret='',
                 token_file='twitter.oauth', domain='api.twitter.com'):
@@ -22,7 +29,7 @@ def oauth_login(app_name='', consumer_key='', consumer_secret='',
         if not os.path.isdir('out'):
             os.mkdir('out')
         write_token_file(token_file, access_token, access_token_secret)
-        print >> sys.stderr, "OAuth Success. Token file", token_file
+        message('OAuth Success. Token file %s', token_file)
     return twitter.Twitter(domain=domain, api_version='1',
                            auth=twitter.oauth.OAuth(
                                access_token, access_token_secret,
@@ -55,11 +62,11 @@ def search(text, max_pages=10, results_per_page=100):
         for page in range(1, max_pages + 1):
             yield t.search(q=text, rpp=results_per_page, page=page)['results']
 
-def streamsearch(ostream, text, max_pages=10, results_per_page=100):
-    """Stream the results of searching for 'text' to the 'ostream' open file
+def streamsearch(ofile, text, max_pages=10, results_per_page=100):
+    """Stream the results of searching for 'text' to the 'ofile' output file
 
     Args:
-      ostream           file, an open file where we can write the tweets
+      ofile             str, the name of a file where we will write any tweets
                         we find. Tweets are written in JSON format, with every
                         tweet being stored in a separate dict of key-value
                         pairs like 'id', 'text', etc. The dict is one of the
@@ -77,8 +84,24 @@ def streamsearch(ostream, text, max_pages=10, results_per_page=100):
     Returns:
       None
     """
+    # Load the id of already seen tweets, if there are any.
+    seen = {}
     try:
-        seen = {}
+        tweetfile = file(json_filename, 'r')
+        seen = dict((tweet['id'], True)
+                    for tweet in [json.loads(line)
+                                  for line in tweetfile.readlines()])
+        tweetfile.close()
+    except IOError, e:
+        if e.errno == errno.ENOENT:
+            pass
+        else:
+            message('Error pre-loading seen tweet ids: %s', e)
+            return None
+    if seen:
+        message('%d tweets preloaded from %s', len(sorted(seen)), ofile)
+    try:
+        ostream = file(ofile, 'a+')
         for matches in search(text, max_pages=max_pages,
                               results_per_page=results_per_page):
             newmatches = 0
@@ -90,10 +113,13 @@ def streamsearch(ostream, text, max_pages=10, results_per_page=100):
                     seen[tid] = True
                     print >> ostream, json.dumps(tweet)
             if newmatches > 0:
-                print >> sys.stderr, '%s -- %d new tweets logged' % (
-                    str(datetime.datetime.now()), newmatches)
+                message('%d new tweets logged at %s', newmatches, ofile)
+    except IOError, e:
+        message('Error writing at file "%s". %s', ofile, e)
+        return None
     except Exception, e:
-        print sys.stderr, 'Interrupted', e
+        message('Interrupted', e)
+        return None
 
 if __name__ == '__main__':
 
@@ -106,4 +132,4 @@ if __name__ == '__main__':
 
     lookup_text = '#7ngr'               # search text to match
     json_filename = 'tweets.json'       # log file for archiving tweets
-    streamsearch(file(json_filename, 'w+'), lookup_text)
+    streamsearch(json_filename, lookup_text)
