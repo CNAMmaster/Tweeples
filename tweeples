@@ -2,6 +2,7 @@
 #
 # Tweeples - Mine Twitter for people relationships
 
+import datetime
 import json
 import os
 import sys
@@ -10,11 +11,8 @@ import twitter
 from twitter.oauth import write_token_file, read_token_file
 from twitter.oauth_dance import oauth_dance
 
-def oauth_login(app_name='',
-                consumer_key='',
-                consumer_secret='',
-                token_file='twitter.oauth',
-                domain='api.twitter.com'):
+def oauth_login(app_name='', consumer_key='', consumer_secret='',
+                token_file='twitter.oauth', domain='api.twitter.com'):
     try:
         (access_token, access_token_secret) = read_token_file(token_file)
     except IOError, e:
@@ -31,10 +29,71 @@ def oauth_login(app_name='',
                                consumer_key, consumer_secret))
 
 def search(text, max_pages=10, results_per_page=100):
+    """Generator for searching 'text' in Twitter content
+
+    Search the public Twitter timeline for tweets matching a 'text' string,
+    which can also be a hash tag, and yield a batch of matched tweets every
+    time we have some results.
+
+    Args:
+      text              str, the text to search for in Twitter. This can
+                        be a plain text string or a '#hashtag' to look
+                        for tweets of this topic only.
+      max_pages         int, maximum number of result 'pages' to obtain
+                        from Twitter's backlog of archived tweets. When
+                        not specified, default to 10 pages.
+      results_per_page  int, maximum number of results per page to fetch
+                        from Twitter's backlog of archived tweets. When
+                        not specified, default to 100 tweets per page.
+
+    Returns:
+      An array of dicts. Every dict in the returned array is a 'result' from
+      twitter.Twitter.search and represents a single tweet.
+    """
     while True:
         t = twitter.Twitter(domain="search.twitter.com")
         for page in range(1, max_pages + 1):
             yield t.search(q=text, rpp=results_per_page, page=page)['results']
+
+def streamsearch(ostream, text, max_pages=10, results_per_page=100):
+    """Stream the results of searching for 'text' to the 'ostream' open file
+
+    Args:
+      ostream           file, an open file where we can write the tweets
+                        we find. Tweets are written in JSON format, with every
+                        tweet being stored in a separate dict of key-value
+                        pairs like 'id', 'text', etc. The dict is one of the
+                        results from twitter.Twitter.search().
+      text              str, the text to search for in Twitter. This can
+                        be a plain text string or a '#hashtag' to look
+                        for tweets of this topic only.
+      max_pages         int, maximum number of result 'pages' to obtain
+                        from Twitter's backlog of archived tweets. When
+                        not specified, default to 10 pages.
+      results_per_page  int, maximum number of results per page to fetch
+                        from Twitter's backlog of archived tweets. When
+                        not specified, default to 100 tweets per page.
+
+    Returns:
+      None
+    """
+    try:
+        seen = {}
+        for matches in search(text, max_pages=max_pages,
+                              results_per_page=results_per_page):
+            newmatches = 0
+            for tweet in matches:
+                (tid, tuser, text) = (tweet['id'], tweet['from_user'],
+                                      tweet['text'])
+                if not tid in seen:
+                    newmatches += 1
+                    seen[tid] = True
+                    print >> ostream, json.dumps(tweet)
+            if newmatches > 0:
+                print >> sys.stderr, '%s -- %d new tweets logged' % (
+                    str(datetime.datetime.now()), newmatches)
+    except Exception, e:
+        print sys.stderr, 'Interrupted', e
 
 if __name__ == '__main__':
 
@@ -45,17 +104,6 @@ if __name__ == '__main__':
     CONSUMER_KEY = ''			# secret: contact gkeramidas
     CONSUMER_SECRET = ''		# secret: contact gkeramidas
 
-    results = {}
-    lookup_text = '#7ngr'
-    for matches in search(lookup_text):
-        newmatches = 0
-        for tweet in matches:
-            (tid, tuser, text) = (tweet['id'], tweet['from_user'],
-                                  tweet['text'])
-            if not tid in results:
-                print json.dumps(tweet)
-                results[tid] = tweet
-                newmatches += 1
-        if newmatches > 0:
-            print ''
-            sys.stdout.flush()
+    lookup_text = '#7ngr'               # search text to match
+    json_filename = 'tweets.json'       # log file for archiving tweets
+    streamsearch(file(json_filename, 'w+'), lookup_text)
