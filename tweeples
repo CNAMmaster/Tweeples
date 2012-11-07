@@ -147,11 +147,11 @@ if __name__ == '__main__':
         lookup_text = ' '.join(args)
         message('Lookup text: %s', lookup_text)
 
-    try:
-        while True:
+    while True:
+        try:
             streamsearch(json_filename, lookup_text)
-    except Exception, e:
-        # TODO(gkeramidas): Find a better way to handle exceptions
-        # related to Twitter requests vs. all the rest.
-        message('Skipping exception %s [...]', str(e).split('\n')[0])
-        pass
+        except Exception, e:
+            # TODO(gkeramidas): Find a better way to handle exceptions
+            # related to Twitter requests vs. all the rest.
+            message('Skipping exception %s [...]', str(e).split('\n')[0])
+            pass
