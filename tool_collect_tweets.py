@@ -109,7 +109,6 @@ def streamsearch(ofile, text, max_pages=10, results_per_page=100):
         if ostream and ostream != sys.stdout:
             ostream.close()
         warning('Error writing at file "%s". %s', ofilename, e)
-        return None
 
 if __name__ == '__main__':
     json_filename = None                # Where to store matching tweets
