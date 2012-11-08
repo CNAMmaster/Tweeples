@@ -87,9 +87,10 @@ def streamsearch(ofile, text, max_pages=10, results_per_page=100):
       None
     """
     # Load the id of already seen tweets, if there are any.
+    ofilename = ofile or 'standard output'
     seen = ofile and preload_tweets(ofile) or set()
     if seen:
-        message('%d tweets preloaded from %s', len(seen), ofile)
+        message('%d tweets preloaded from %s', len(seen), ofilename)
     try:
         ostream = ofile and file(ofile, 'a+') or sys.stdout
         for matches in search(text, max_pages=max_pages,
@@ -103,10 +104,9 @@ def streamsearch(ofile, text, max_pages=10, results_per_page=100):
                     seen.add(tid)
                     print >> ostream, json.dumps(tweet)
             if newmatches > 0:
-                message('%d new tweets logged at %s', newmatches,
-                    ofile or 'standard output')
+                message('%d new tweets logged at %s', newmatches, ofilename)
     except IOError, e:
-        warning('Error writing at file "%s". %s', ofile, e)
+        warning('Error writing at file "%s". %s', ofilename, e)
         return None
 
 if __name__ == '__main__':
