@@ -10,31 +10,7 @@ import os
 import sys
 import twitter
 
-from twitter.oauth import write_token_file, read_token_file
-from twitter.oauth_dance import oauth_dance
-
-def message(msgformat, *args):
-    """Print a message string to sys.stderr"""
-    timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    msg = msgformat % (args)
-    print >> sys.stderr, '%s -- %s' % (timestamp, msg)
-
-def oauth_login(app_name='', consumer_key='', consumer_secret='',
-                token_file='twitter.oauth', domain='api.twitter.com'):
-    try:
-        (access_token, access_token_secret) = read_token_file(token_file)
-    except IOError, e:
-        (access_token, access_token_secret) = oauth_dance(
-            app_name, consumer_key, consumer_secret)
-
-        if not os.path.isdir('out'):
-            os.mkdir('out')
-        write_token_file(token_file, access_token, access_token_secret)
-        message('OAuth Success. Token file %s', token_file)
-    return twitter.Twitter(domain=domain, api_version='1',
-                           auth=twitter.oauth.OAuth(
-                               access_token, access_token_secret,
-                               consumer_key, consumer_secret))
+from util import error, message, warning
 
 def search(text, max_pages=10, results_per_page=100):
     """Generator for searching 'text' in Twitter content
@@ -97,7 +73,7 @@ def streamsearch(ofile, text, max_pages=10, results_per_page=100):
         if e.errno == errno.ENOENT:
             pass
         else:
-            message('Error pre-loading seen tweet ids: %s', e)
+            error(1, 'Cannot pre-load seen tweets: %s', e)
             return None
     if seen:
         message('%d tweets preloaded from %s', len(sorted(seen)), ofile)
@@ -116,18 +92,10 @@ def streamsearch(ofile, text, max_pages=10, results_per_page=100):
             if newmatches > 0:
                 message('%d new tweets logged at %s', newmatches, ofile)
     except IOError, e:
-        message('Error writing at file "%s". %s', ofile, e)
+        warning('Error writing at file "%s". %s', ofile, e)
         return None
 
 if __name__ == '__main__':
-
-    # Go to http://twitter.com/apps/new to create an app and get these items
-    # See also http://dev.twitter.com/pages/oauth_single_token
-
-    APP_NAME = 'Tweeple Graph'
-    CONSUMER_KEY = ''			# secret: contact gkeramidas
-    CONSUMER_SECRET = ''		# secret: contact gkeramidas
-
     json_filename = 'tweets.json'       # default output file name
     lookup_text = '#7ngr'               # default search string
 
@@ -135,8 +103,7 @@ if __name__ == '__main__':
     try:
         optlist, args = getopt.getopt(sys.argv[1:], 'o:')
     except getopt.GetoptError, e:
-        message('%s', e)
-        sys.exit(1)
+        error(1, '%s', e)
 
     for opt, value in optlist:
         if opt == '-o' and value:
@@ -150,8 +117,6 @@ if __name__ == '__main__':
     while True:
         try:
             streamsearch(json_filename, lookup_text)
-        except Exception, e:
-            # TODO(gkeramidas): Find a better way to handle exceptions
-            # related to Twitter requests vs. all the rest.
-            message('Skipping exception %s [...]', str(e).split('\n')[0])
+        except TwitterHTTPError, e:
+            warning('Skipping HTTP error %s [...]', str(e).split('\n')[0])
             pass
