@@ -1,14 +1,18 @@
 #!/usr/bin/env python
-#
-# Tweeples - Mine Twitter for people relationships
 
-import datetime
+'''Collect tweets matching a text pattern and store them
+continuously in JSON-formatted lines of a local file.'''
+
+__author__ = 'Giorgos Keramidas <gkeramidas@gmail.com>'
+
+import argparse
 import errno
-import getopt
 import json
 import os
 import sys
 import twitter
+
+from twitter.api import TwitterHTTPError
 
 from util import error, message, warning
 
@@ -39,15 +43,36 @@ def search(text, max_pages=10, results_per_page=100):
         for page in range(1, max_pages + 1):
             yield t.search(q=text, rpp=results_per_page, page=page)['results']
 
+def preload_tweets(filename):
+    """Preload previously seen tweets from a text file.
+
+    Args:
+        filename        str, Name of the file where we preload tweets from.
+
+    Returns:
+        A set() containing all the numeric 'id' attributes of tweets we have
+        already seen.
+    """
+    if not filename:
+        return set()
+    seen = set()
+    try:
+        stream = file(json_filename, 'r')
+        for id in (tweet['id'] for tweet in
+                      (json.loads(line) for line in stream.readlines())):
+            seen.add(id)
+        stream.close()
+    except Exception, e:
+        seen = set()            # Avoid returning partial results on error
+    return seen
+
 def streamsearch(ofile, text, max_pages=10, results_per_page=100):
     """Stream the results of searching for 'text' to the 'ofile' output file
 
     Args:
       ofile             str, the name of a file where we will write any tweets
                         we find. Tweets are written in JSON format, with every
-                        tweet being stored in a separate dict of key-value
-                        pairs like 'id', 'text', etc. The dict is one of the
-                        results from twitter.Twitter.search().
+                        tweet being stored in a separate line as a Python dict.
       text              str, the text to search for in Twitter. This can
                         be a plain text string or a '#hashtag' to look
                         for tweets of this topic only.
@@ -62,23 +87,11 @@ def streamsearch(ofile, text, max_pages=10, results_per_page=100):
       None
     """
     # Load the id of already seen tweets, if there are any.
-    seen = {}
-    try:
-        tweetfile = file(json_filename, 'r')
-        seen = dict((tweet['id'], True)
-                    for tweet in [json.loads(line)
-                                  for line in tweetfile.readlines()])
-        tweetfile.close()
-    except IOError, e:
-        if e.errno == errno.ENOENT:
-            pass
-        else:
-            error(1, 'Cannot pre-load seen tweets: %s', e)
-            return None
+    seen = ofile and preload_tweets(ofile) or set()
     if seen:
-        message('%d tweets preloaded from %s', len(sorted(seen)), ofile)
+        message('%d tweets preloaded from %s', len(seen), ofile)
     try:
-        ostream = file(ofile, 'a+')
+        ostream = ofile and file(ofile, 'a+') or sys.stdout
         for matches in search(text, max_pages=max_pages,
                               results_per_page=results_per_page):
             newmatches = 0
@@ -87,7 +100,7 @@ def streamsearch(ofile, text, max_pages=10, results_per_page=100):
                                       tweet['text'])
                 if not tid in seen:
                     newmatches += 1
-                    seen[tid] = True
+                    seen.add(tid)
                     print >> ostream, json.dumps(tweet)
             if newmatches > 0:
                 message('%d new tweets logged at %s', newmatches, ofile)
@@ -96,24 +109,23 @@ def streamsearch(ofile, text, max_pages=10, results_per_page=100):
         return None
 
 if __name__ == '__main__':
-    json_filename = 'tweets.json'       # default output file name
-    lookup_text = '#7ngr'               # default search string
+    json_filename = None                # Where to store matching tweets
+    lookup_text = None                  # Text to search for
 
     # Parse command-line args for output file name.
-    try:
-        optlist, args = getopt.getopt(sys.argv[1:], 'o:')
-    except getopt.GetoptError, e:
-        error(1, '%s', e)
+    parser = argparse.ArgumentParser(description=(
+        'Collect tweets matching a text pattern and store them'
+        'continuously in JSON-formatted lines of a local file.'))
+    parser.add_argument('-o', '--output', metavar='FILE', type=str,
+        default=None, help='output file name')
+    parser.add_argument('TEXT', nargs='+', type=str, default=None,
+        help='text to search for in tweet content')
+    args = parser.parse_args()
 
-    for opt, value in optlist:
-        if opt == '-o' and value:
-            json_filename = value       # custom output file
-            message('Output file: %s', json_filename)
-    if len(args) > 0:
-        # custom lookup text
-        lookup_text = ' '.join(args)
-        message('Lookup text: %s', lookup_text)
+    json_filename = args.output         # Where to store matching tweets
+    lookup_text = ' '.join(args.TEXT)   # Text to search for
 
+    # Keep searching for tweets, until manually interrupted.
     while True:
         try:
             streamsearch(json_filename, lookup_text)
