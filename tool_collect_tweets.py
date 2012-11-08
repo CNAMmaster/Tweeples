@@ -57,7 +57,7 @@ def preload_tweets(filename):
         return set()
     seen = set()
     try:
-        stream = file(json_filename, 'r')
+        stream = file(filename, 'r')
         for id in (tweet['id'] for tweet in
                       (json.loads(line) for line in stream.readlines())):
             seen.add(id)
