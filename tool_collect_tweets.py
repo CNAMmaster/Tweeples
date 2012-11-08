@@ -103,7 +103,8 @@ def streamsearch(ofile, text, max_pages=10, results_per_page=100):
                     seen.add(tid)
                     print >> ostream, json.dumps(tweet)
             if newmatches > 0:
-                message('%d new tweets logged at %s', newmatches, ofile)
+                message('%d new tweets logged at %s', newmatches,
+                    ofile or 'standard output')
     except IOError, e:
         warning('Error writing at file "%s". %s', ofile, e)
         return None
