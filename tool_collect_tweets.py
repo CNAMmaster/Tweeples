@@ -55,13 +55,12 @@ def preload_tweets(filename):
     """
     if not filename:
         return set()
-    seen = set()
     try:
-        stream = file(filename, 'r')
+        seen = set()
         for id in (tweet['id'] for tweet in
-                      (json.loads(line) for line in stream.readlines())):
+                      (json.loads(line) for line in
+                          file(filename, 'r').readlines())):
             seen.add(id)
-        stream.close()
     except Exception, e:
         seen = set()            # Avoid returning partial results on error
     return seen
