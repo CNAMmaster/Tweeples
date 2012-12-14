@@ -1,3 +1,11 @@
+# Setup script for Tweeples.
+#
+# This file is part of the Tweeples collection of scripts.
+#
+# Tweeples is free software: you can redistribute it and/or modify it
+# under the terms of the BSD license. For the full terms of the license
+# see the file `COPYING' in this directory.
+
 from setuptools import setup, find_packages
 import sys, os
 

@@ -1,5 +1,13 @@
 #!/usr/bin/env python
 
+# Sample script that collects tweets matching a string.
+#
+# This file is part of the Tweeples collection of scripts.
+#
+# Tweeples is free software: you can redistribute it and/or modify it
+# under the terms of the BSD license. For the full terms of the license
+# see the file `COPYING' in this directory.
+
 '''Collect tweets matching a text pattern and store them
 continuously in JSON-formatted lines of a local file.'''
 
